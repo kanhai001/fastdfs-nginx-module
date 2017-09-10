@@ -31,6 +31,8 @@
 #include "trunk_shared.h"
 #include "common.h"
 
+#include "input_image_magic.h"
+
 #define FDFS_MOD_REPONSE_MODE_PROXY	'P'
 #define FDFS_MOD_REPONSE_MODE_REDIRECT	'R'
 
@@ -987,32 +989,28 @@ int fdfs_http_request_handler(struct fdfs_http_context *pContext)
 			return HTTP_BADREQUEST;
 		}
 	}
-
+    // 检查文件名长度 true_filename
+    // 具体的 00/00/wKgA6Fm0IGSAXwNHAASNAuw4eSQ796.png
 	if (fdfs_check_data_filename(true_filename, filename_len) != 0)
 	{
 		OUTPUT_HEADERS(pContext, (&response), HTTP_BADREQUEST);
 		return HTTP_BADREQUEST;
 	}
 
-	if ((result=fdfs_get_file_info_ex1(file_id, false, &file_info)) != 0)
-	{
-		if (result == ENOENT)
-		{
-			http_status = HTTP_NOTFOUND;
-		}
-        else if (result == EINVAL)
-		{
+
+    // 获取文件信息
+	if ((result=fdfs_get_file_info_ex1(file_id, false, &file_info)) != 0) {
+		if (result == ENOENT) {
+		    http_status = HTTP_NOTFOUND;
+		} else if (result == EINVAL) {
 			http_status = HTTP_BADREQUEST;
         }
-		else
-		{
+		else {
 			http_status = HTTP_INTERNAL_SERVER_ERROR;
 		}
-
-		OUTPUT_HEADERS(pContext, (&response), http_status);
-		return http_status;
+        OUTPUT_HEADERS(pContext, (&response), http_status);
+        return http_status;
 	}
-	
 	if (file_info.file_size >= 0)  //normal file
 	{
 		FDFS_SET_LAST_MODIFIED(response, pContext, \
@@ -1023,12 +1021,26 @@ int fdfs_http_request_handler(struct fdfs_http_context *pContext)
 	memset(&file_stat, 0, sizeof(file_stat));
 	if (bSameGroup)
 	{
-        	FDFSTrunkHeader trunkHeader;
+        FDFSTrunkHeader trunkHeader;
 		if ((result=trunk_file_stat_ex1(pStorePaths, store_path_index, \
 			true_filename, filename_len, &file_stat, \
 			&trunkInfo, &trunkHeader, &fd)) != 0)
 		{
 			bFileExists = false;
+			// 如果为false
+			logInfo("first not exists source id: %s", file_id);
+            // 文件不存在,需要判断是否为图片文件,如果是,则切割
+            if (check_input_is_image_convert(g_fdfs_base_path,true_filename,filename_len) == 1) {
+                if ((result=trunk_file_stat_ex1(pStorePaths, store_path_index, \
+                			true_filename, filename_len, &file_stat, \
+                			&trunkInfo, &trunkHeader, &fd)) != 0) {
+                    bFileExists = false;
+                } else {
+                    bFileExists = true;
+                }
+            } else {
+                logInfo("resize failed id: %s", file_id);
+            }
 		}
 		else
 		{
