@@ -1028,7 +1028,7 @@ int fdfs_http_request_handler(struct fdfs_http_context *pContext)
 		{
 			bFileExists = false;
 			// 如果为false
-			logInfo("first not exists source id: %s", file_id);
+//			logInfo("first not exists source id: %s", file_id);
             // 文件不存在,需要判断是否为图片文件,如果是,则切割
             if (check_input_is_image_convert(g_fdfs_base_path,true_filename,filename_len) == 1) {
                 if ((result=trunk_file_stat_ex1(pStorePaths, store_path_index, \
