@@ -43,6 +43,8 @@ static char* to_fmt_arr[] = {
 
 #define DATA_NAME "/data/"
 
+#define DATA_LEN 6
+
 // 判断文件是否为图片转换
 int check_input_is_image_convert(const char* base_path, const char *filename, const int len){
     int from_idx = -1;
@@ -67,7 +69,7 @@ int check_input_is_image_convert(const char* base_path, const char *filename, co
         return 0;
     }
 
-    logError("file: "__FILE__", line: %d, from idx %d " , __LINE__, from_idx);
+    // logError("file: "__FILE__", line: %d, from idx %d " , __LINE__, from_idx);
 
     int disk_file_len = prv_name - filename + strlen(from_fmt_arr[from_idx]) - 1;
     strncpy(disk_filename, base_path, strlen(base_path));
@@ -78,10 +80,10 @@ int check_input_is_image_convert(const char* base_path, const char *filename, co
     strncat(save_disk_filename + strlen(base_path), DATA_NAME, 6);
     strncat(save_disk_filename + strlen(base_path) + 6, filename, len);
 
-    logError("file: "__FILE__", line: %d, prv_name: %s disk_file_len: %d \r\ndisk_filename:%s\r\nsave disk_filename:%s \r\n",
-        __LINE__,
-        prv_name, disk_file_len, disk_filename,
-        save_disk_filename);
+//    logError("file: "__FILE__", line: %d, prv_name: %s disk_file_len: %d \r\ndisk_filename:%s\r\nsave disk_filename:%s \r\n",
+//        __LINE__,
+//        prv_name, disk_file_len, disk_filename,
+//        save_disk_filename);
 
     int to_fmt_size = sizeof(to_fmt_arr)/sizeof(char*);
     // find prv
@@ -98,7 +100,7 @@ int check_input_is_image_convert(const char* base_path, const char *filename, co
         return 0;
     }
 
-    logError("file: "__FILE__", line: %d, from idx:%d to:idx:%d %s\r\n", __LINE__, from_idx, to_idx, latest_ext);
+    // logError("file: "__FILE__", line: %d, from idx:%d to:idx:%d %s\r\n", __LINE__, from_idx, to_idx, latest_ext);
 
 
     if(strlen(latest_ext) != strlen(to_fmt_arr[to_idx])) {
@@ -123,7 +125,7 @@ int check_input_is_image_convert(const char* base_path, const char *filename, co
     int height = -1;
     int quality = -1;
 
-    logError("file: "__FILE__", line: %d parse_all_str: %s latest_ext:%s \r\n",__LINE__, parse_all_str,latest_ext);
+    // logError("file: "__FILE__", line: %d parse_all_str: %s latest_ext:%s \r\n",__LINE__, parse_all_str,latest_ext);
 
     char *width_start = strchr(parse_all_str,PARSE_CONVERT_CHAR);
     int width_len = 0;
@@ -137,7 +139,8 @@ int check_input_is_image_convert(const char* base_path, const char *filename, co
         strncpy(width_str,parse_all_str,width_len);
     }
 
-    printf("2 find start:%s width:%s \r\n", width_start, width_str);
+//    logInfo("image width_str:%s \r\n", width_str);
+    // printf("2 find start:%s width:%s \r\n", width_start, width_str);
 
     char *height_start = strchr((width_start+1),PARSE_CONVERT_CHAR);
     int height_len = 0;
@@ -151,7 +154,9 @@ int check_input_is_image_convert(const char* base_path, const char *filename, co
         strncpy(height_str,(width_start+1),height_len);
     }
 
-    printf("3 find start:%s height:%s height_len:%d \r\n", height_start, height_str, height_len);
+//    logInfo("image height_str:%s \r\n", height_str);
+
+    // printf("3 find start:%s height:%s height_len:%d \r\n", height_start, height_str, height_len);
 
     char *quality_start = latest_ext;
     int quality_len = 0;
@@ -165,7 +170,11 @@ int check_input_is_image_convert(const char* base_path, const char *filename, co
         strncpy(quality_str,(height_start+1),quality_len);
     }
 
-    printf("4 find start:%s quality:%s quality_len:%d \r\n", quality_start, quality_str, quality_len);
+//    logInfo("image quality_str:%s \r\n", quality_str);
+
+    // printf("4 find start:%s quality:%s quality_len:%d \r\n", quality_start, quality_str, quality_len);
+
+//    logInfo("image width_len:%d  height_len:%d \r\n", width_len,height_len);
 
     if (width_len == 0 && height_len == 0) {
         return 0;
@@ -179,7 +188,7 @@ int check_input_is_image_convert(const char* base_path, const char *filename, co
             }
         }
         width = atoi(width_str);
-        if(width <= 0) {
+        if(width < 0) {
             return 0;
         }
     }
@@ -191,7 +200,7 @@ int check_input_is_image_convert(const char* base_path, const char *filename, co
             }
         }
         height = atoi(height_str);
-        if (height <= 0) {
+        if (height < 0) {
             return 0;
         }
     }
@@ -206,6 +215,12 @@ int check_input_is_image_convert(const char* base_path, const char *filename, co
         if ( quality <= 0 || quality >= 100 ) {
             return 0;
         }
+    }
+
+//    logInfo("image width:%d  height:%d \r\n", width,height);
+
+    if (width <= 0 && height <= 0) {
+        return 0;
     }
 
     return image_convert_operate(disk_filename, save_disk_filename, width, height, quality);
@@ -238,21 +253,47 @@ int image_convert_operate(const char *disk_filename,
     return 0;
   }
 
+  size_t rows = images->rows;
+  size_t columns = images->columns;
+
+//  size_t quality = image->quality;
+
   /*
     Convert the image to a thumbnail.
   */
 
-  double quality_val = quality / 100.0;
-  if ( quality_val <= 0.0 ) {
-    quality_val = 1.0;
-  } else if ( quality_val > 1.0 ) {
-    quality_val = 1.0;
+//  double quality_val = quality / 100.0;
+//  if ( quality_val <= 0.0 ) {
+//    quality_val = 1.0;
+//  } else if ( quality_val > 1.0 ) {
+//    quality_val = 1.0;
+//  }
+
+  size_t re_width = 0 ;
+  size_t re_height = 0 ;
+  double re_rate = 1.0;
+  if(width <= 0) {
+    // 自适应宽度
+    re_rate = rows * 100.0 / height;
+    re_width = columns * 100.0 / re_rate;
+    re_height = height;
+  } else if( height <= 0 ) {
+    re_width = width;
+    // 自适应高度
+    re_rate = columns * 100.0 / width ;
+    re_height =  rows * 100.0 / re_rate;
+  } else {
+    re_width = width;
+    re_height = height;
   }
+
+  logInfo("image read width:%d height:%d, rate:%lf after width: %d height:%d  fielname:%s \r\n", columns, rows,re_rate, re_width, re_height,
+    save_disk_filename);
 
   thumbnails=NewImageList();
   while ((image=RemoveFirstImageFromList(&images)) != (Image *) NULL)
   {
-    resize_image=ResizeImage(image,width,height,LanczosFilter, 1.0 , exception);
+    resize_image=ResizeImage(image,re_width,re_height,LanczosFilter, 1.0 , exception);
     if (resize_image == (Image *) NULL){
         MagickError(exception->severity,exception->reason,exception->description);
     }
