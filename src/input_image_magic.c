@@ -212,7 +212,7 @@ int check_input_is_image_convert(const char* base_path, const char *filename, co
             }
         }
         quality = atoi(quality_str);
-        if ( quality <= 0 || quality >= 100 ) {
+        if ( quality <= 0 || quality > 100 ) {
             return 0;
         }
     }
@@ -256,19 +256,6 @@ int image_convert_operate(const char *disk_filename,
   size_t rows = images->rows;
   size_t columns = images->columns;
 
-//  size_t quality = image->quality;
-
-  /*
-    Convert the image to a thumbnail.
-  */
-
-//  double quality_val = quality / 100.0;
-//  if ( quality_val <= 0.0 ) {
-//    quality_val = 1.0;
-//  } else if ( quality_val > 1.0 ) {
-//    quality_val = 1.0;
-//  }
-
   size_t re_width = 0 ;
   size_t re_height = 0 ;
   double re_rate = 1.0;
@@ -287,8 +274,13 @@ int image_convert_operate(const char *disk_filename,
     re_height = height;
   }
 
-  logInfo("image read width:%d height:%d, rate:%lf after width: %d height:%d  fielname:%s \r\n", columns, rows,re_rate, re_width, re_height,
-    save_disk_filename);
+//  logInfo("image read width:%d height:%d, rate:%lf after width: %d height:%d quality:%d fielname:%s \r\n",
+//        columns,
+//        rows,re_rate,
+//        re_width,
+//        re_height,
+//        quality,
+//        save_disk_filename);
 
   thumbnails=NewImageList();
   while ((image=RemoveFirstImageFromList(&images)) != (Image *) NULL)
@@ -304,6 +296,12 @@ int image_convert_operate(const char *disk_filename,
     Write the image thumbnail.
   */
   (void) strcpy(thumbnails->filename,save_disk_filename);
+
+  if( quality > 0 && quality <= 100 ) {
+    // thumbnails->compression = (CompressionType) JPEGCompression;
+    thumbnails->quality = quality ;
+  }
+
   WriteImage(image_info,thumbnails);
   /*
     Destroy the image thumbnail and exit.

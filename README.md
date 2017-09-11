@@ -29,8 +29,9 @@ https://www.imagemagick.org/script/magick-core.php
 
 https://www.imagemagick.org/MagickWand/resize.htm
 
+https://github.com/ImageMagick/ImageMagick/issues/29
 
-
+It looks like the value that the PNG compression reads was changed from wand->image_info->quality to wand->images->quality in this commit
 
 
 
