@@ -15,6 +15,8 @@
 
 #include <magick/MagickCore.h>
 
+#include <linux/limits.h>
+
 static char* from_fmt_arr[] = {
     CHECK_FROM_PNG,
     CHECK_FROM_JPG,
@@ -37,7 +39,12 @@ static char* to_fmt_arr[] = {
 #define IMG_MAX_HEIGHT  8
 #define IMG_MAX_QUALITY 3
 
-#define DISK_FILE_NAME_MAX_LEN 256
+#ifdef PATH_MAX
+    // add PATH_MAX
+    #define DISK_FILE_NAME_MAX_LEN PATH_MAX
+#else
+    #define DISK_FILE_NAME_MAX_LEN 512
+#endif
 
 #define PRIVATE_IS_NUMBER(ch) ((ch >= '0' && ch <= '9'))
 
